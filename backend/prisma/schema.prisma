@@ -14,11 +14,12 @@ model User {
 }
 
 model Driver {
-  id        Int    @id @default(autoincrement())
-  name      String
-  driver_id Int    @unique
-  route_id  Int?
-  Bus       Bus[]
+  id           Int    @id @default(autoincrement())
+  name         String
+  driver_id    Int    @unique
+  passwordHash String @default("494d022492052a06f8f81949639a1d148c1051fa3d4e4688fbd96efe649cd382")
+  route_id     Int?
+  Bus          Bus[]
 }
 
 model Stop {

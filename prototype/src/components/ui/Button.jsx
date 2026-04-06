@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export function Button({ children, onClick, variant = 'primary', className = '', ...props }) {
+export function Button({ children, onClick, variant = 'primary', className = '', style = {}, ...props }) {
   const baseStyle = {
     padding: '10px 20px',
     borderRadius: '12px',
@@ -40,7 +40,7 @@ export function Button({ children, onClick, variant = 'primary', className = '',
     <motion.button
       whileHover={{ y: -2 }}
       whileTap={{ scale: 0.98 }}
-      style={{ ...baseStyle, ...variants[variant] }}
+      style={{ ...baseStyle, ...variants[variant], ...style }}
       className={className}
       onClick={onClick}
       {...props}
