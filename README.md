@@ -1,110 +1,174 @@
-# 🚌 Full-Stack Bus Tracking System
+# BusTracker Pro
 
-A complete, real-time bus tracking application that connects bus drivers with passengers. Built with a modern full-stack web architecture, it allows passengers to see live bus movements on an interactive map and tracks fleets across predefined routes in real-time using WebSockets.
+BusTracker Pro is a full-stack bus tracking system that lets passengers view live route activity, allows authenticated drivers to broadcast bus movement, and gives admins the ability to update route and stop information from the dashboard.
 
-## ✨ Features
+Live frontend deployment: [bus-tracking-system-vert.vercel.app](https://bus-tracking-system-vert.vercel.app/)
 
-- **Real-Time GPS Tracking**: Live location updates of buses on routes using WebSockets.
-- **Interactive Maps**: Rich map visualization using Leaflet for rendering routes, current bus locations, and stops.
-- **Driver & Passenger Views**: Dedicated interfaces for drivers to broadcast their location and for passengers to track incoming buses.
-- **Modern UI**: A premium, responsive, green-themed design aesthetic with micro-animations.
-- **Robust Persistence**: Maintains records of users, drivers, buses, stops, and routes using a relational PostgreSQL database.
+## Features
 
-## 🛠 Technology Stack
+- Live passenger map with Leaflet and real-time bus marker updates
+- Backend-driven routes, stops, buses, and driver assignments
+- Driver authentication using driver ID and password
+- Protected driver dashboard for location broadcasting
+- Admin editing for existing stops, coordinates, route labels, and ordered stop assignments
+- PostgreSQL persistence with Prisma
+- Socket.IO-based live updates between driver and passenger views
 
-### Frontend (`/prototype`)
-- **Framework**: React 18 with Vite
-- **Mapping**: Leaflet & React-Leaflet
-- **Real-Time Communication**: Socket.io-client
-- **Animations & Icons**: Framer Motion, Lucide React
-- **Styling**: Vanilla CSS with modern aesthetics
+## Tech Stack
 
-### Backend (`/backend`)
-- **Runtime & Framework**: Node.js, Express.js
-- **Database**: PostgreSQL
-- **ORM**: Prisma
-- **Real-Time Communication**: Socket.IO
+### Frontend
+- React 18
+- Vite
+- Leaflet and React Leaflet
+- Socket.IO Client
+- Framer Motion
 
----
+### Backend
+- Node.js
+- Express
+- Socket.IO
+- Prisma
+- PostgreSQL
 
-## 🏛 System Architecture
+## Project Structure
 
-The application is built using a classic Client-Server Architecture distributed over two primary tiers, augmented with a real-time event-driven layer:
+```text
+Bus-Tracking-System/
+├── backend/      # Express, Prisma, PostgreSQL, Socket.IO
+├── prototype/    # React + Vite frontend
+└── README.md
+```
 
-1. **Presentation Layer (React Frontend)**: Employs a component-based architecture. Drivers broadcast location coordinates (simulated or real GPS) via websockets. Passengers listen to these WebSocket events to see smooth map updates.
-2. **Application Layer (Express / Node.js)**: Handles REST API requests (e.g., fetching routes, available buses) and orchestrates WebSocket connections. It acts as a middleman, efficiently broadcasting coordinates received from drivers to all subscribed passenger clients.
-3. **Data Layer (PostgreSQL & Prisma)**: The relational database acting as the single source of truth for the systemic entities (Buses, Drivers, Routes).
+## Architecture
 
 ```mermaid
 graph TD
-    A[Driver Client] -->|WebSocket: emit location| B(Node/Express Server + Socket.IO)
-    B -->|WebSocket: broadcast location| C[Passenger Client 1]
-    B -->|WebSocket: broadcast location| D[Passenger Client 2]
-    B <-->|Prisma ORM| E[(PostgreSQL Database)]
-    C -->|REST API: Fetch Routes/Stops| B
-    D -->|REST API: Fetch Routes/Stops| B
+    A["Driver Dashboard"] -->|Authenticated location update| B["Express + Socket.IO API"]
+    C["Passenger Map"] -->|Fetch routes/stops/buses| B
+    D["Admin Dashboard"] -->|Update stops/routes| B
+    B -->|Prisma| E["PostgreSQL"]
+    B -->|Socket.IO busLocationUpdate| C
 ```
 
----
+## Core Data Model
 
-## 🗄️ Database Schema
+- `Driver`: driver identity, driver ID, password hash, route assignment
+- `Stop`: stop name and coordinates
+- `Route`: route name, labels, and ordered stop IDs
+- `Bus`: bus number, assigned route, assigned driver, current coordinates, status
+- `User`: basic user table retained from the original project structure
 
-Managed via Prisma, the data model consists of interconnected tables:
-
-- **User**: Core system users with a role-based access system (`username`, `role`).
-- **Driver**: Stores driver details. Each driver is uniquely identified and can be assigned to routes.
-- **Route**: Contains route names, start/end destinations, and an array of associated Stop IDs.
-- **Stop**: Represents geographical points of interest (lat/lng) along routes.
-- **Bus**: The primary tracker entity, linking a `route`, a `driver`, and its current geographical coordinates (`lat`, `lng`), along with operational `status`.
-
----
-
-## 🚀 Installation & Setup
+## Local Setup
 
 ### Prerequisites
-- [Node.js](https://nodejs.org/en/) (v18+)
-- [PostgreSQL](https://www.postgresql.org/) (Local or Cloud like Neon/Supabase)
 
-### 1. Database Setup
-Ensure you have a PostgreSQL database running. Create a `.env` file in the `/backend` directory and add your connection string:
+- Node.js 18+
+- PostgreSQL
+
+### 1. Configure the backend
+
+Create `backend/.env`:
+
 ```env
-DATABASE_URL="postgresql://user:password@localhost:5432/bustracker?schema=public"
+DATABASE_URL="postgresql://user:password@localhost:5432/bus_tracker?schema=public"
+PORT=5000
 ```
 
-### 2. Backend Setup
-Navigate to the backend directory, install dependencies, and run Prisma migrations:
+### 2. Install backend dependencies
+
 ```bash
 cd backend
 npm install
-npx prisma generate
+```
+
+### 3. Sync Prisma schema and seed demo data
+
+```bash
+npx prisma generate --no-engine
 npx prisma db push
+npm run seed
 ```
 
-### 3. Frontend Setup
-Navigate to the frontend prototype directory and install dependencies:
+### 4. Install frontend dependencies
+
 ```bash
-cd prototype
+cd ../prototype
 npm install
 ```
 
----
+### 5. Configure the frontend
 
-## 💻 Running the Application
+Create `prototype/.env`:
 
-You will need two terminal windows to run both the backend and frontend simultaneously.
+```env
+VITE_API_BASE_URL="http://localhost:5000"
+```
 
-**Terminal 1: Backend Development Server**
+## Running Locally
+
+Run the backend:
+
 ```bash
 cd backend
 npm run dev
 ```
 
-**Terminal 2: Frontend Development Server**
+Run the frontend:
+
 ```bash
 cd prototype
 npm run dev
 ```
 
-Visit the local URL provided by Vite (usually `http://localhost:5173`) in your browser to interact with the application.
+Frontend default dev URL:
 
- Remove-Item -Recurse -Force node_modules\.vite
+```text
+http://localhost:5173
+```
+
+## Demo Driver Credentials
+
+- `101 / driver101`
+- `102 / driver102`
+
+## Available Backend API Endpoints
+
+- `GET /api/routes`
+- `GET /api/stops`
+- `GET /api/buses`
+- `POST /api/driver/login`
+- `GET /api/driver/me`
+- `POST /api/driver/location`
+- `PUT /api/stops/:id`
+- `PUT /api/routes/:id`
+
+## Deployment Notes
+
+### Frontend
+
+- Deploy `prototype/` to Vercel
+- Set `VITE_API_BASE_URL` to your deployed backend URL
+
+### Backend
+
+- Deploy `backend/` to Render
+- Set `DATABASE_URL`
+- Run:
+
+```bash
+npx prisma db push
+npm run seed
+```
+
+## Current Product Capabilities
+
+- Passengers can search routes and view live bus positions between stops
+- Drivers must authenticate before accessing the broadcast console
+- Admins can update existing stop locations and route definitions without changing source code
+
+## Future Improvements
+
+- Restrict backend CORS to the deployed frontend domain
+- Replace in-memory driver sessions with persistent auth storage
+- Add admin authentication and role-based protection
+- Optimize frontend bundle size and compress logo assets
