@@ -1,44 +1,46 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Home from './pages/Home';
 import PassengerView from './pages/PassengerView';
 import AdminDashboard from './pages/AdminDashboard';
 import DriverConsole from './pages/DriverConsole';
 import { initialBuses } from './mockData';
+import { DashboardLayout } from './layouts/DashboardLayout';
+import { io } from 'socket.io-client';
+
+// Connect to our new Express/Socket.io Backend
+const socket = io('http://localhost:5000');
 
 function App() {
   const [currentView, setCurrentView] = useState('home');
-  // Global state for buses to simulate real-time updates across components
+  // Global state for buses to track real-time socket updates
   const [buses, setBuses] = useState(initialBuses);
 
-  const navigate = (view) => {
-    setCurrentView(view);
-  };
+  useEffect(() => {
+    socket.on('busLocationUpdate', (updatedBus) => {
+       setBuses(currentBuses => 
+         currentBuses.map(b => b.id === updatedBus.id ? { ...b, lat: updatedBus.lat, lng: updatedBus.lng } : b)
+       );
+    });
+
+    return () => socket.off('busLocationUpdate');
+  }, []);
+
+  const navigate = (view) => setCurrentView(view);
 
   const updateBusLocation = (busId, lat, lng) => {
+    // Optimistic UI update
     setBuses(buses.map(b => b.id === busId ? { ...b, lat, lng } : b));
+    // Emit to backend
+    socket.emit('driverUpdateLocation', { busId, lat, lng });
   };
 
   return (
-    <div className="app-container">
-      {/* Simple Top Navigation */}
-      {currentView !== 'home' && (
-        <nav style={{ padding: '16px', background: 'var(--bg-card)', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontWeight: 'bold', fontSize: '1.25rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--accent)' }}>🚌</span> BusTracker Pro
-          </div>
-          <button className="btn btn-secondary" onClick={() => navigate('home')} style={{ padding: '6px 12px', fontSize: '0.875rem' }}>
-            Back to Home
-          </button>
-        </nav>
-      )}
-
-      <main style={{ padding: currentView === 'home' ? '0' : '24px', maxWidth: '1200px', margin: '0 auto' }}>
-        {currentView === 'home' && <Home onNavigate={navigate} />}
-        {currentView === 'passenger' && <PassengerView buses={buses} />}
-        {currentView === 'admin' && <AdminDashboard buses={buses} />}
-        {currentView === 'driver' && <DriverConsole buses={buses} onUpdateLocation={updateBusLocation} />}
-      </main>
-    </div>
+    <DashboardLayout currentView={currentView} onNavigate={navigate}>
+      {currentView === 'home' && <Home onNavigate={navigate} />}
+      {currentView === 'passenger' && <PassengerView buses={buses} />}
+      {currentView === 'admin' && <AdminDashboard buses={buses} />}
+      {currentView === 'driver' && <DriverConsole buses={buses} onUpdateLocation={updateBusLocation} />}
+    </DashboardLayout>
   );
 }
 
